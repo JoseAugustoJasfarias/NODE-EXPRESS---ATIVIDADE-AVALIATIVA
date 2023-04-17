@@ -1,7 +1,7 @@
 const fs = require('fs');
 const express = require('express');
 const router = express.Router();
-const app = express();
+
 
 
 
@@ -77,12 +77,66 @@ router.post('/novo', (req, res) => {
 });
 
 
- 
+// Deletar aluno por index
+// Padrão de URL utilizado na consulta http://localhost:3000/alunos/1
+router.delete('/:index', (req, res) => {
+  const index = parseInt(req.params.index);
+  fs.readFile('./db.json', (error, data) => {
+    if (error) throw error;
+    const listaAlunos = JSON.parse(data);
+
+    if (index >= 0 && index < listaAlunos.length) {
+      listaAlunos.splice(index, 1);
+      fs.writeFile('./db.json', JSON.stringify(listaAlunos), error => {
+        if (error) throw error;
+        res.json(`Aluno na posição ${index} deletado com sucesso.`);
+      });
+    } else {
+      res.status(400).json({
+        message: `Índice ${index} inválido!`
+      });
+    }
+  });
+});
+
+
 
 // Atualizar aluno por index
+// Padrão de URL utilizado na consulta http://localhost:3000/alunos/1
 
+router.put('/:index', (req, res) => {
+  const { index } = req.params;
+  const { nome, matricula, media } = req.body || {};
 
- 
+  if (nome && media && matricula) {
+    const novoAluno = { nome, media, matricula };
+    fs.readFile('./db.json', (error, data) => {
+      if (error) throw error;
+      const listaAlunos = JSON.parse(data);
+      
+      // Verifica se a posição é válida
+      if (index < 0 || index >= listaAlunos.length) {
+        res.status(400).json({
+          message: `A posição ${index} não é válida!`
+        });
+      } else {
+        // Atualiza os dados do aluno na lista
+        listaAlunos[index] = { ...listaAlunos[index], ...novoAluno };
+        fs.writeFile('./db.json', JSON.stringify(listaAlunos), error => {
+          if (error) throw error;
+          res.json(
+            `Atualizado com sucesso: Matrícula: ${matricula}, Nome: ${nome}, Média: ${media}`
+          );
+        });
+      }
+    });
+  } else {
+    res.status(400).json({
+      message: 'Dados inválidos! O nome, matricula e a média são obrigatórios.'
+    });
+  }
+});
+
 
 function filtrarNome(nome) {
   return alunos.filter(aluno =>
